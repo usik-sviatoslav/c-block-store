@@ -1,0 +1,46 @@
+# ----- Healthcheck ----------------------------------------------------------------------------------------------------
+x-healthcheck: &x-healthcheck
+  start_period: 30s
+  interval: 30s
+  timeout: 5s
+  retries: 3
+
+x-postgres-healthcheck: &x-postgres-healthcheck
+  test: [ "CMD-SHELL", "pg_isready -h postgres -p 5432" ]
+  <<: *x-healthcheck
+
+
+# ----- Services -------------------------------------------------------------------------------------------------------
+services:
+
+  # --- Postgres -------------------------------------------------------------------------------------------------------
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    env_file: ./.env
+    healthcheck: *x-postgres-healthcheck
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # --- Backend --------------------------------------------------------------------------------------------------------
+  backend:
+    image: c-block-store:latest
+    container_name: backend
+    env_file: ./.env
+    command: ./scripts/entrypoint.sh
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"  # FastAPI
+      - "8001:8001"  # Django
+    volumes:
+      - ./src:/src/
+      - logs:/var/log/backend/
+
+volumes:
+  postgres_data:
+  logs:
