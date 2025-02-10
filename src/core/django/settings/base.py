@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # --- Apps -------------------
+    "apps.user",
 ]
 
 MIDDLEWARE = [
@@ -54,6 +55,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+AUTH_USER_MODEL = "user.User"
 ROOT_URLCONF = "core.django.urls"
 
 TEMPLATES = [
