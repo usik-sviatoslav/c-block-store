@@ -98,4 +98,4 @@ pytest-cov:
 
 check:
 	@echo "Start code checking..."
-	$(MAKE) lint reformat mypy pytest
+	$(MAKE) reformat lint mypy pytest
