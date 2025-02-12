@@ -12,6 +12,9 @@ fastapi = "^0.115.8"
 uvicorn = "^0.34.0"
 psycopg2-binary = "^2.9.10"
 uuid6 = "^2024.7.10"
+pyjwt = "^2.10.1"
+python-multipart = "^0.0.20"
+pydantic = {extras = ["email"], version = "^2.10.6"}
 
 [tool.poetry.group.dev.dependencies]
 django-stubs = "^5.1.3"
