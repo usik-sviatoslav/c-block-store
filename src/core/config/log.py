@@ -1,9 +1,11 @@
 import logging
 import os
-from typing import Dict, List, Literal, Optional, Union
+from typing import Literal
 
 __all__ = [
     "LOGGING",
+    "LOGGING_LEVEL_CONSOLE",
+    "LOGGING_LEVEL_FILE",
 ]
 
 LOGGING_LEVEL_CONSOLE = os.getenv("LOGGING_LEVEL_CONSOLE", logging.INFO)
@@ -18,16 +20,18 @@ DEFAULT_HANDLERS = Literal[
     "console",
     "access",
     "file_access",
+    "file_celery_beat",
+    "file_celery_worker",
     "file_fastapi_errors",
     "file_django_errors",
 ]
 
 
-def to_handlers(handlers: Optional[List[DEFAULT_HANDLERS]] = None) -> Dict:
+def to_handlers(handlers: list[DEFAULT_HANDLERS] | None = None) -> dict:
     return {"handlers": handlers if handlers else [], "propagate": False}
 
 
-def file_handler(file_name: str, level: Union[int, str]) -> Dict:
+def file_handler(file_name: str, level: int | str) -> dict:
     return {
         "formatter": "file",
         "class": "logging.handlers.RotatingFileHandler",
@@ -72,6 +76,8 @@ LOGGING = {
             "level": LOGGING_LEVEL_CONSOLE,
         },
         "file_access": file_handler("access/access.log", logging.INFO),
+        "file_celery_beat": file_handler("celery/beat.log", LOGGING_LEVEL_FILE),
+        "file_celery_worker": file_handler("celery/worker.log", LOGGING_LEVEL_FILE),
         "file_fastapi_errors": file_handler("fastapi/errors.log", LOGGING_LEVEL_FILE),
         "file_django_errors": file_handler("django/errors.log", LOGGING_LEVEL_FILE),
     },
@@ -84,5 +90,11 @@ LOGGING = {
         "django.request": to_handlers(["console", "file_django_errors"]),
         "django.db.backends": to_handlers(["console", "file_django_errors"]),
         "django.security.csrf": to_handlers(["console", "file_django_errors"]),
+        # ---------------------------------------------------------------------
+        "celery": to_handlers(["console"]),
+        "celery.beat": to_handlers(["console", "file_celery_beat"]),
+        "celery.worker": to_handlers(["console", "file_celery_worker"]),
+        # ---------------------------------------------------------------------
+        "healthcheck": to_handlers(["console"]),
     },
 }

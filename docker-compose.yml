@@ -1,14 +1,12 @@
-# ----- Healthcheck ----------------------------------------------------------------------------------------------------
-x-healthcheck: &x-healthcheck
-  start_period: 30s
-  interval: 30s
-  timeout: 5s
-  retries: 3
-
-x-postgres-healthcheck: &x-postgres-healthcheck
-  test: [ "CMD-SHELL", "pg_isready -h postgres -p 5432" ]
-  <<: *x-healthcheck
-
+# ----- Base Backend ---------------------------------------------------------------------------------------------------
+x-base-config: &x-base-backend-config
+  image: c-block-store:latest
+  env_file: ./.env
+  restart: always
+  volumes:
+    - ./src:/src/
+    - ./setup.conf:/etc/supervisor/conf.d/setup.conf
+    - logs:/var/log/backend/
 
 # ----- Services -------------------------------------------------------------------------------------------------------
 services:
@@ -18,29 +16,79 @@ services:
     image: postgres:latest
     container_name: postgres
     env_file: ./.env
-    healthcheck: *x-postgres-healthcheck
+    restart: always
     ports:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "512M"
+
+  # --- Redis ----------------------------------------------------------------------------------------------------------
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: "0.3"
+          memory: "256M"
 
   # --- Backend --------------------------------------------------------------------------------------------------------
   backend:
-    image: c-block-store:latest
+    <<: *x-base-backend-config
     container_name: backend
-    env_file: ./.env
-    command: ./scripts/entrypoint.sh
-    restart: always
+    command: ./scripts/start-backend.sh
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
+      - redis
     ports:
       - "8000:8000"  # FastAPI
       - "8001:8001"  # Django
-    volumes:
-      - ./src:/src/
-      - logs:/var/log/backend/
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: "2048M"
+
+  # --- Celery ---------------------------------------------------------------------------------------------------------
+  celery-beat:
+    <<: *x-base-backend-config
+    container_name: celery-beat
+    depends_on:
+      - backend
+    environment:
+      CELERY_TYPE: "beat"
+    command: ./scripts/start-celery.sh
+    deploy:
+      resources:
+        limits:
+          cpus: "0.3"
+          memory: "256M"
+
+  celery-worker:
+    <<: *x-base-backend-config
+    container_name: celery-worker
+    depends_on:
+      - backend
+    environment:
+      CELERY_TYPE: "worker"
+    command: ./scripts/start-celery.sh
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "512M"
 
 volumes:
   postgres_data:
+  redis_data:
   logs:
