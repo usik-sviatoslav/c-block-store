@@ -31,7 +31,7 @@ RUN FLAG=$( [ "$ENV_STATE" = "staging" ] || [ "$ENV_STATE" = "production" ] && e
 
 # Installing Poetry dependencies
 RUN poetry install --no-root $FLAG && \
-    poetry cache clear . --all
+    poetry cache clear . --all --no-interaction
 
 
 # Base stage
@@ -41,20 +41,27 @@ ARG USERNAME=code
 
 WORKDIR /src
 
+# Installing system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends supervisor && \
+    rm -rf /var/lib/apt/lists/*
+
 # Copy system dependencies
 COPY --from=builder /usr/local /usr/local
 COPY --from=builder /etc/group /etc/group
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /home/$USERNAME /home/$USERNAME
 
+# Copying project source code
+COPY ./src /src/
+COPY ./setup.conf /etc/supervisor/conf.d/
+
 # Creating log directories and grant permissions
 RUN mkdir -p /var/log/backend/access && \
+    mkdir -p /var/log/backend/celery && \
     mkdir -p /var/log/backend/django && \
     mkdir -p /var/log/backend/fastapi && \
     chown -R $USERNAME:$USERNAME /var/log/backend
 
-# Copying project source code
-COPY ./src /src/
-
-## Select internal user
+# Select internal user
 USER $USERNAME
