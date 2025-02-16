@@ -1,7 +1,7 @@
-from typing import Optional
-
 from fastapi import Form
 from pydantic import BaseModel, EmailStr
+
+from api.schemas.user import UserCreateSchema
 
 
 class TokenPair(BaseModel):
@@ -15,20 +15,22 @@ class RefreshTokenRequestForm:
         self.refresh_token = refresh_token
 
 
-class RegisterRequestForm:
+class RegisterRequestForm(UserCreateSchema):
     def __init__(
         self,
         email: EmailStr = Form(...),
         password: str = Form(...),
-        username: Optional[str] = Form(None),
-        first_name: Optional[str] = Form(None),
-        last_name: Optional[str] = Form(None),
+        username: str | None = Form(None),
+        first_name: str | None = Form(None),
+        last_name: str | None = Form(None),
     ):
-        self.email = email
-        self.password = password
-        self.username = username if username else str(email).split("@")[0]
-        self.first_name = first_name
-        self.last_name = last_name
+        super().__init__(
+            email=email,
+            password=password,
+            username=username if username else str(email).split("@")[0],
+            first_name=first_name,
+            last_name=last_name,
+        )
 
 
 class LoginRequestForm:
