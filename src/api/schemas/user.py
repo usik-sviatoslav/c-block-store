@@ -1,10 +1,9 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import EmailStr
+
+from .base import BaseModelSchema
 
 
-class UserRetrieve(BaseModel):
-    class Config:
-        from_attributes = True
-
+class UserReadSchema(BaseModelSchema):
     email: EmailStr
     username: str
     first_name: str

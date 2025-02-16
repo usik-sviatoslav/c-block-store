@@ -1,5 +1,3 @@
-from typing import Optional
-
 from fastapi import Form
 from pydantic import BaseModel, EmailStr
 
@@ -20,9 +18,9 @@ class RegisterRequestForm:
         self,
         email: EmailStr = Form(...),
         password: str = Form(...),
-        username: Optional[str] = Form(None),
-        first_name: Optional[str] = Form(None),
-        last_name: Optional[str] = Form(None),
+        username: str | None = Form(None),
+        first_name: str | None = Form(None),
+        last_name: str | None = Form(None),
     ):
         self.email = email
         self.password = password

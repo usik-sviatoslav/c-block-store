@@ -1,6 +1,6 @@
 import os
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Literal
+from typing import Any, Literal
 
 import jwt
 from fastapi.security import OAuth2PasswordBearer
@@ -46,7 +46,7 @@ def verify_token(token: str, token_type: Literal["access", "refresh"]) -> Any:
         raise InvalidTokenException()
 
 
-def create_token_pair(data: dict) -> Dict[str, str]:
+def create_token_pair(data: dict) -> dict[str, str]:
     return {
         "access_token": create_token(data, "access"),
         "refresh_token": create_token(data, "refresh"),
@@ -54,7 +54,7 @@ def create_token_pair(data: dict) -> Dict[str, str]:
     }
 
 
-def refresh_access_token(refresh_token: str) -> Dict[str, str]:
+def refresh_access_token(refresh_token: str) -> dict[str, str]:
     payload = verify_token(refresh_token, "refresh")
 
     if "sub" not in payload:
